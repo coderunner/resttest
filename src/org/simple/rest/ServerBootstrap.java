@@ -5,6 +5,8 @@ import java.net.URI;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.glassfish.gmbal.ManagedObjectManager;
+import org.glassfish.gmbal.ManagedObjectManagerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
@@ -29,19 +31,23 @@ public class ServerBootstrap {
     }
 
     public static final URI BASE_URI = getBaseURI();
-
-    protected static HttpServer startServer() throws IOException {
-        System.out.println("Starting grizzly...");
-        ResourceConfig rc = new PackagesResourceConfig("org.simple.rest");
-        return GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
-    }
     
     public static void main(String[] args) throws IOException {
-        HttpServer httpServer = startServer();
+    	ManagedObjectManager manager = 
+    			ManagedObjectManagerFactory.createStandalone("com.restapi");
+    	manager.createRoot();
+    	manager.registerAtRoot(new HelloMonitoring(), "hello-monitoring");
+    	
+		System.out.println("Starting grizzly...");
+		ResourceConfig rc = new PackagesResourceConfig("org.simple.rest");
+    	     
+    	HttpServer httpServer = GrizzlyServerFactory.createHttpServer(BASE_URI, rc);
+        httpServer.getServerConfiguration().setJmxEnabled(true);
+ 
         System.out.println(String.format("Jersey app started with WADL available at "
                 + "%sapplication.wadl\nTry out %shelloworld\nHit enter to stop it...",
                 BASE_URI, BASE_URI));
         System.in.read();
         httpServer.stop();
-    }    
+    } 
 }
